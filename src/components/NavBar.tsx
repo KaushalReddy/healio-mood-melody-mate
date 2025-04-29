@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Headphones, Bed, Smile, MenuIcon, X } from 'lucide-react';
+import { Calendar, Headphones, Bed, Smile, MenuIcon, X, Bot } from 'lucide-react';
 import { Button } from './ui/button';
 
 const NavBar = () => {
@@ -14,6 +14,7 @@ const NavBar = () => {
     { name: 'Mood', path: '/mood', icon: <Smile className="w-4 h-4 mr-2" /> },
     { name: 'Journal', path: '/journal', icon: <Calendar className="w-4 h-4 mr-2" /> },
     { name: 'Music', path: '/music', icon: <Headphones className="w-4 h-4 mr-2" /> },
+    { name: 'AI Assistant', path: '/ai-assistant', icon: <Bot className="w-4 h-4 mr-2" /> },
   ];
 
   const isActive = (path: string) => location.pathname === path;

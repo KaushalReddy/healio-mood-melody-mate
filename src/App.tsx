@@ -9,6 +9,7 @@ import SleepPage from "./pages/SleepPage";
 import MoodPage from "./pages/MoodPage";
 import JournalPage from "./pages/JournalPage";
 import MusicPage from "./pages/MusicPage";
+import AiAssistantPage from "./pages/AiAssistantPage";
 import NotFound from "./pages/NotFound";
 import NavBar from "./components/NavBar";
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/mood" element={<MoodPage />} />
             <Route path="/journal" element={<JournalPage />} />
             <Route path="/music" element={<MusicPage />} />
+            <Route path="/ai-assistant" element={<AiAssistantPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

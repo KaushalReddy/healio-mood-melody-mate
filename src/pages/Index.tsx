@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import FeatureCard from "@/components/FeatureCard";
-import { Bed, Calendar, Headphones, Smile } from "lucide-react";
+import { Bed, Calendar, Headphones, Smile, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -17,14 +16,14 @@ const Index = () => {
               </h1>
               <p className="text-xl text-gray-600 mb-8">
                 Healio helps you track your mood, journal your thoughts, monitor your sleep, 
-                and find peace through music – all in one place.
+                find peace through music, and get personalized AI support – all in one place.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button className="healio-gradient text-lg px-8 py-6">
                   <Link to="/mood">Track Your Mood</Link>
                 </Button>
                 <Button variant="outline" className="text-lg px-6 py-6">
-                  <Link to="/journal">Write in Journal</Link>
+                  <Link to="/ai-assistant">Talk to Healio AI</Link>
                 </Button>
               </div>
             </div>
@@ -47,7 +46,7 @@ const Index = () => {
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-800 animate-fadeIn">
             Features to Support Your Mental Health
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             <div className="animate-fadeIn" style={{ animationDelay: "0.1s" }}>
               <FeatureCard 
                 title="Sleep Tracker" 
@@ -78,6 +77,14 @@ const Index = () => {
                 description="Listen to soothing sounds to calm your mind and reduce stress."
                 icon={<Headphones className="w-6 h-6 text-white" />} 
                 to="/music" 
+              />
+            </div>
+            <div className="animate-fadeIn" style={{ animationDelay: "0.5s" }}>
+              <FeatureCard 
+                title="AI Assistant" 
+                description="Get personalized support and health recommendations from Healio AI."
+                icon={<Bot className="w-6 h-6 text-white" />} 
+                to="/ai-assistant" 
               />
             </div>
           </div>
