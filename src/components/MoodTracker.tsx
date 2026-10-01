@@ -5,21 +5,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Smile } from 'lucide-react';
 
-const MoodTracker = () => {
+export const moods = [
+  { emoji: '😊', label: 'Happy', color: 'bg-green-100 border-green-200' },
+  { emoji: '😌', label: 'Calm', color: 'bg-blue-100 border-blue-200' },
+  { emoji: '😐', label: 'Neutral', color: 'bg-gray-100 border-gray-200' },
+  { emoji: '😔', label: 'Sad', color: 'bg-indigo-100 border-indigo-200' },
+  { emoji: '😠', label: 'Angry', color: 'bg-red-100 border-red-200' },
+  { emoji: '😰', label: 'Anxious', color: 'bg-yellow-100 border-yellow-200' },
+];
+
+const MoodTracker = ({ onSave }: { onSave: (row: { mood: string; notes: string | null }) => Promise<void> }) => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
 
-  const moods = [
-    { emoji: '😊', label: 'Happy', color: 'bg-green-100 border-green-200' },
-    { emoji: '😌', label: 'Calm', color: 'bg-blue-100 border-blue-200' },
-    { emoji: '😐', label: 'Neutral', color: 'bg-gray-100 border-gray-200' },
-    { emoji: '😔', label: 'Sad', color: 'bg-indigo-100 border-indigo-200' },
-    { emoji: '😠', label: 'Angry', color: 'bg-red-100 border-red-200' },
-    { emoji: '😰', label: 'Anxious', color: 'bg-yellow-100 border-yellow-200' },
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMood) {
       toast({
@@ -29,12 +29,13 @@ const MoodTracker = () => {
       });
       return;
     }
-    
-    // In a real application, this would save to a database
+    await onSave({ mood: selectedMood, notes: notes.trim() || null });
     toast({
       title: "Mood logged",
       description: `You're feeling ${selectedMood}`,
     });
+    setSelectedMood(null);
+    setNotes('');
   };
 
   return (
