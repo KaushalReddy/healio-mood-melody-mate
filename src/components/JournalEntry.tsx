@@ -5,32 +5,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Calendar } from 'lucide-react';
 
-const JournalEntry = () => {
+const JournalEntry = ({ onSave }: { onSave: (row: { title: string; content: string }) => Promise<void> }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      toast({
-        title: "Please add a title",
-        description: "Your journal entry needs a title",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!content.trim()) {
-      toast({
-        title: "Please add content",
-        description: "Write something in your journal",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // In a real application, this would save to a database
+    if (!title.trim() || !content.trim()) return;
+    await onSave({ title: title.trim(), content: content.trim() });
+    setTitle('');
+    setContent('');
     toast({
       title: "Journal entry saved",
       description: "Your thoughts have been recorded",

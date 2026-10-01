@@ -6,15 +6,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Bed } from 'lucide-react';
 
-const SleepTracker = () => {
+const SleepTracker = ({ onSave }: { onSave: (row: { hours: number; quality: number; notes: string | null }) => Promise<void> }) => {
   const [hours, setHours] = useState(7);
   const [quality, setQuality] = useState(3);
   const [notes, setNotes] = useState('');
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, this would save to a database
+    await onSave({ hours, quality, notes: notes.trim() || null });
+    setNotes('');
     toast({
       title: "Sleep data logged",
       description: `You slept for ${hours} hours with ${qualityLabel} quality.`,
