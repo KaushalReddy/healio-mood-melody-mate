@@ -1,32 +1,27 @@
-# MindChain
+# Healio — Mood Melody Mate
 
-> A modern web experience designed around personal reflection, mental well-being, and an interactive digital interface.
+> A modern web experience built around mood, reflection, and personalized digital wellness interactions.
 
 ## Overview
 
-**MindChain** is a React-based web application focused on creating an engaging and approachable experience around mental well-being and personal reflection.
+**Healio — Mood Melody Mate** is a web application designed to create a more engaging digital experience around mood and personal well-being.
 
-The project combines a modern frontend architecture with a carefully designed user interface to demonstrate how thoughtful interaction design can make digital wellness experiences more accessible and engaging.
+The project combines an interactive React frontend with a modern component system and Supabase-backed project infrastructure.
 
-MindChain was developed with a focus on:
-
-- Clean and responsive user interfaces
-- Interactive user experiences
-- Component-based frontend architecture
-- Accessible and intuitive interactions
-- Modern web development practices
+The goal is to create an approachable experience where users can interact with the application through a visually engaging and responsive interface.
 
 ## Features
 
-- Modern responsive interface
-- Interactive user experience
-- Reusable React components
-- Responsive layouts for different screen sizes
-- Modern UI components using shadcn/ui
-- Utility-first styling with Tailwind CSS
-- Type-safe development with TypeScript
+- Responsive web interface
+- Interactive mood-focused experience
+- Modern component-based architecture
+- Responsive design for desktop and mobile
+- Reusable UI components
+- Supabase project integration
+- Type-safe frontend development
+- Modern utility-first styling
 
-> Features may evolve as MindChain continues to be developed.
+> The feature set can continue to evolve as the application is developed.
 
 ## Tech Stack
 
@@ -35,15 +30,37 @@ MindChain was developed with a focus on:
 | React | Frontend application |
 | TypeScript | Type-safe development |
 | Vite | Development and build tooling |
-| Tailwind CSS | Styling and responsive design |
-| shadcn/ui | Reusable UI components |
+| Tailwind CSS | Styling and responsive layouts |
+| shadcn/ui | UI component system |
+| Supabase | Backend/data infrastructure |
+
+## Architecture
+
+Healio follows a modern frontend architecture:
+
+```text
+User
+  │
+  ▼
+React Application
+  │
+  ├── UI Components
+  ├── Interactive Experiences
+  └── Application Logic
+          │
+          ▼
+      Supabase
+```
+
+The frontend is built using React and TypeScript, while Tailwind CSS and shadcn/ui provide the interface layer. Supabase is included in the project infrastructure for backend/data functionality.
 
 ## Project Structure
 
 ```text
-Mind-Chain/
+healio-mood-melody-mate/
 ├── public/
 ├── src/
+├── supabase/
 ├── components.json
 ├── eslint.config.js
 ├── index.html
@@ -57,7 +74,7 @@ Mind-Chain/
 
 ### Prerequisites
 
-Make sure you have:
+Install:
 
 - Node.js
 - npm
@@ -67,13 +84,13 @@ Make sure you have:
 Clone the repository:
 
 ```bash
-git clone https://github.com/KaushalReddy/Mind-Chain.git
+git clone https://github.com/KaushalReddy/healio-mood-melody-mate.git
 ```
 
 Navigate into the project:
 
 ```bash
-cd Mind-Chain
+cd healio-mood-melody-mate
 ```
 
 Install dependencies:
@@ -88,33 +105,62 @@ Start the development server:
 npm run dev
 ```
 
-The application will be available through the local development URL provided by Vite.
+Vite will provide the local development URL.
 
-## Development
+## Environment Variables
 
-The project uses a component-based React architecture with TypeScript and Tailwind CSS.
+If your local configuration requires Supabase credentials, create a `.env` file and provide the environment variables required by your Supabase configuration.
 
-Changes can be developed locally and pushed back to the repository, allowing the project to continue evolving alongside its Lovable development workflow.
+Do not commit private API keys or secrets to the repository.
+
+Example:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
 ## Design Philosophy
 
-MindChain focuses on making the interface feel:
+Healio is built around four principles:
 
-- **Simple** — interactions should be easy to understand.
-- **Calm** — the interface should avoid unnecessary visual complexity.
-- **Responsive** — the experience should work across devices.
-- **Interactive** — users should be able to engage with the application rather than simply read static content.
+### Calm
+
+The interface should feel approachable rather than overwhelming.
+
+### Interactive
+
+The experience should encourage users to interact with the application instead of navigating through static information.
+
+### Personal
+
+The application is designed around the idea of creating a more individualized experience.
+
+### Accessible
+
+The interface should remain usable across different screen sizes and devices.
+
+## Development
+
+Healio was developed using a modern component-based frontend architecture.
+
+The project can be developed locally and synchronized with the GitHub repository. The repository also contains the Supabase project configuration used by the application.
 
 ## Future Improvements
 
-Potential areas for continued development include:
+Potential areas for future development include:
 
-- Expanded personalization
-- Additional interactive experiences
-- Improved data persistence
-- More detailed user insights
-- Enhanced accessibility
-- Progressive performance optimization
+- More personalized experiences
+- Expanded mood-based interactions
+- Additional data visualization
+- Improved accessibility
+- Enhanced mobile experience
+- Additional Supabase-powered functionality
+- Performance optimization
+
+## Disclaimer
+
+Healio is a software project focused on digital wellness and personal reflection. It is **not a substitute for professional medical, psychological, or emergency services**.
 
 ## Author
 
