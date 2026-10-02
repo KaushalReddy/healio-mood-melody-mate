@@ -1,12 +1,16 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, Headphones, Bed, Smile, MenuIcon, X, Bot } from 'lucide-react';
+import { Calendar, Headphones, Bed, Smile, MenuIcon, X, Bot, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
+  
   
   const navItems = [
     { name: 'Home', path: '/', icon: null },
@@ -46,6 +50,11 @@ const NavBar = () => {
                 </Button>
               </Link>
             ))}
+            {user ? (
+              <Button variant="outline" onClick={() => supabase.auth.signOut()}><LogOut className="w-4 h-4 mr-2" />Sign out</Button>
+            ) : (
+              <Link to="/auth"><Button variant="outline">Sign in</Button></Link>
+            )}
           </div>
 
           {/* Mobile menu button */}

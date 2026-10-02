@@ -1,164 +1,151 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
+import { HeartHandshake, Plus, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Conversation, ConversationContent, ConversationEmptyState, ConversationScrollButton } from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import { PromptInput, PromptInputFooter, PromptInputSubmit, PromptInputTextarea } from "@/components/ai-elements/prompt-input";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-import { useState } from 'react';
-import { Bot, Send } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { toast } from 'sonner';
+type Thread = { id: string; title: string; updated_at: string };
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+const useThreads = () =>
+  useQuery({
+    queryKey: ["chat_threads"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("chat_threads").select("id,title,updated_at").order("updated_at", { ascending: false });
+      if (error) throw error;
+      return data as Thread[];
+    },
+  });
+
+const createThread = async () => {
+  const { data, error } = await supabase.from("chat_threads").insert({}).select("id").single();
+  if (error) throw error;
+  return data.id as string;
+};
+
+const ChatWindow = ({ threadId, initial }: { threadId: string; initial: UIMessage[] }) => {
+  const qc = useQueryClient();
+  const [input, setInput] = useState("");
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const { messages, sendMessage, status, stop } = useChat({
+    id: threadId,
+    messages: initial,
+    transport: new DefaultChatTransport({
+      api: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`,
+      headers: async () => {
+        const { data } = await supabase.auth.getSession();
+        return { Authorization: `Bearer ${data.session?.access_token ?? ""}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY };
+      },
+      body: { threadId },
+    }),
+    onFinish: () => qc.invalidateQueries({ queryKey: ["chat_threads"] }),
+    onError: (e) => toast.error(e.message || "Something went wrong"),
+  });
+  useEffect(() => { if (status === "ready") ref.current?.focus(); }, [status]);
+
+  return (
+    <div className="flex h-full flex-col">
+      <Conversation>
+        <ConversationContent>
+          {messages.length === 0 && (
+            <ConversationEmptyState
+              icon={<HeartHandshake className="h-10 w-10 text-primary" />}
+              title="Hi, I'm Healio"
+              description="Tell me how you're feeling, or ask about a health condition for gentle precautions."
+            />
+          )}
+          {messages.map((m) => (
+            <Message from={m.role} key={m.id}>
+              <MessageContent className={m.role === "user" ? "bg-primary text-primary-foreground" : ""}>
+                {m.parts.map((p, i) =>
+                  p.type === "text" ? (m.role === "assistant" ? <MessageResponse key={i}>{p.text}</MessageResponse> : <p key={i} className="whitespace-pre-wrap">{p.text}</p>) : null,
+                )}
+              </MessageContent>
+            </Message>
+          ))}
+          {status === "submitted" && <p className="text-sm text-muted-foreground animate-pulse">Healio is thinking…</p>}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
+      <PromptInput
+        className="mt-3"
+        onSubmit={(msg) => {
+          const text = msg.text?.trim();
+          if (!text) return;
+          sendMessage({ text });
+          setInput("");
+        }}
+      >
+        <PromptInputTextarea ref={ref} autoFocus value={input} onChange={(e) => setInput(e.target.value)} placeholder="How are you feeling today?" />
+        <PromptInputFooter className="justify-end">
+          <PromptInputSubmit status={status} onStop={stop} disabled={!input.trim() && status === "ready"} />
+        </PromptInputFooter>
+      </PromptInput>
+    </div>
+  );
+};
 
 const AiAssistantPage = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Hello! I\'m Healio AI, your personal mental health assistant. How are you feeling today? Tell me about any concerns or questions you have, and I\'ll do my best to help you.'
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { threadId } = useParams();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const threads = useThreads();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (threadId || !threads.data) return;
+    if (threads.data.length) navigate(`/ai-assistant/${threads.data[0].id}`, { replace: true });
+    else createThread().then((id) => { qc.invalidateQueries({ queryKey: ["chat_threads"] }); navigate(`/ai-assistant/${id}`, { replace: true }); });
+  }, [threadId, threads.data, navigate, qc]);
 
-    // Add user message
-    const userMessage: Message = { role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
+  const msgs = useQuery({
+    queryKey: ["chat_messages", threadId],
+    enabled: !!threadId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("chat_messages").select("message_id,role,parts").eq("thread_id", threadId!).order("created_at");
+      if (error) throw error;
+      return data.map((r) => ({ id: r.message_id, role: r.role, parts: r.parts })) as UIMessage[];
+    },
+    staleTime: Infinity,
+  });
 
-    // Simulate AI response
-    setTimeout(() => {
-      let response: Message;
-      
-      if (input.toLowerCase().includes('anxiety') || input.toLowerCase().includes('anxious')) {
-        response = {
-          role: 'assistant',
-          content: 'I notice you mentioned feeling anxious. Anxiety is common and there are several things that might help. Try deep breathing exercises (breathe in for 4 seconds, hold for 7, exhale for 8), limit caffeine intake, maintain regular physical activity, and ensure you\'re getting enough sleep. If your anxiety is persistent, consider speaking with a mental health professional who can provide personalized guidance.'
-        };
-      } else if (input.toLowerCase().includes('sleep') || input.toLowerCase().includes('insomnia')) {
-        response = {
-          role: 'assistant',
-          content: 'Sleep issues can significantly impact mental health. I recommend establishing a regular sleep schedule, creating a restful environment (dark, quiet, cool), avoiding screens before bed, limiting caffeine and alcohol, and trying relaxation techniques like progressive muscle relaxation. Our sleep tracking feature can help you monitor your patterns over time.'
-        };
-      } else if (input.toLowerCase().includes('depress')) {
-        response = {
-          role: 'assistant',
-          content: 'I\'m sorry to hear you\'re feeling down. Depression affects many people, and it\'s important to be kind to yourself. Some strategies that might help include regular physical activity, maintaining social connections, practicing mindfulness, setting small achievable goals, and following a regular schedule. Please remember that you deserve professional support - consider reaching out to a mental health professional or crisis helpline if you\'re struggling.'
-        };
-      } else if (input.toLowerCase().includes('stress')) {
-        response = {
-          role: 'assistant',
-          content: 'Managing stress is essential for mental wellbeing. Try identifying your stress triggers and practicing regular self-care activities like exercise, meditation, or hobbies you enjoy. Time management techniques, setting boundaries, and connecting with supportive people can also help reduce stress levels. Our journal feature can be a great way to process stressful thoughts.'
-        };
-      } else {
-        response = {
-          role: 'assistant',
-          content: 'Thank you for sharing that with me. Remember that taking care of your mental health is just as important as physical health. Would you like to explore some coping strategies or relaxation techniques that might help? You can also use our mood tracking and journaling features to monitor your wellbeing over time.'
-        };
-      }
-      
-      setMessages(prev => [...prev, response]);
-      setIsLoading(false);
-      toast.success('Healio AI responded to your message');
-    }, 1500);
+  const newChat = async () => {
+    try {
+      const id = await createThread();
+      qc.invalidateQueries({ queryKey: ["chat_threads"] });
+      navigate(`/ai-assistant/${id}`);
+    } catch (e) { toast.error((e as Error).message); }
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("chat_threads").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    await qc.invalidateQueries({ queryKey: ["chat_threads"] });
+    if (id === threadId) navigate("/ai-assistant");
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="text-center mb-8 animate-fadeIn">
-        <h1 className="text-3xl font-bold mb-2 text-gray-800">
-          <span className="inline-block mr-2">
-            <Bot className="inline-block h-8 w-8 text-healio-600" />
-          </span>
-          Healio AI Assistant
-        </h1>
-        <p className="text-gray-600">Your personal mental health companion</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="col-span-2 animate-fadeIn">
-          <Card className="mb-4">
-            <CardContent className="p-6">
-              <div className="space-y-4 max-h-[500px] overflow-y-auto mb-4">
-                {messages.map((message, index) => (
-                  <div 
-                    key={index} 
-                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div 
-                      className={`max-w-[80%] rounded-lg p-4 ${
-                        message.role === 'user' 
-                          ? 'bg-healio-600 text-white' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {message.content}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] rounded-lg p-4 bg-gray-100">
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '600ms' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <form onSubmit={handleSubmit} className="flex gap-2">
-                <Textarea 
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Type your message here..."
-                  className="flex-grow resize-none"
-                  disabled={isLoading}
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isLoading || !input.trim()} 
-                  className="healio-gradient"
-                >
-                  <Send className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="space-y-6">
-          <Alert className="healio-card animate-fadeIn delay-100">
-            <AlertTitle className="mb-2">Important Note</AlertTitle>
-            <AlertDescription>
-              Healio AI is designed to provide general guidance and support but is not a substitute for professional medical advice, diagnosis, or treatment.
-            </AlertDescription>
-          </Alert>
-          
-          <Card className="p-6 healio-card animate-fadeIn delay-200">
-            <CardHeader className="p-0 pb-4">
-              <CardTitle className="text-xl">How Healio AI Can Help</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ul className="list-disc pl-5 space-y-2 text-gray-700">
-                <li>Suggest personalized coping strategies</li>
-                <li>Provide mental wellness tips</li>
-                <li>Guide you through relaxation techniques</li>
-                <li>Help track your mental health patterns</li>
-                <li>Offer compassionate support when needed</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="container mx-auto max-w-6xl px-4 py-6">
+      <div className="grid gap-4 md:grid-cols-[240px_1fr]">
+        <aside className="healio-card rounded-xl border p-3 space-y-2 md:h-[calc(100vh-8rem)] overflow-y-auto">
+          <Button onClick={newChat} className="w-full"><Plus className="mr-2 h-4 w-4" />New chat</Button>
+          {threads.data?.map((t) => (
+            <div key={t.id} className={cn("flex items-center gap-1 rounded-md", t.id === threadId && "bg-accent")}>
+              <button className="flex-1 truncate px-2 py-2 text-left text-sm" onClick={() => navigate(`/ai-assistant/${t.id}`)}>{t.title}</button>
+              <Button variant="ghost" size="icon" aria-label="Delete chat" onClick={() => remove(t.id)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          ))}
+        </aside>
+        <section className="healio-card rounded-xl border p-4 h-[calc(100vh-8rem)] flex flex-col">
+          <p className="mb-2 text-xs text-muted-foreground">Healio offers general support, not medical advice. In a crisis, call your local emergency number.</p>
+          {threadId && msgs.data ? <ChatWindow key={threadId} threadId={threadId} initial={msgs.data} /> : <p className="text-muted-foreground">Loading…</p>}
+        </section>
       </div>
     </div>
   );
